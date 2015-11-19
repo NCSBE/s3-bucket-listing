@@ -92,11 +92,12 @@ function getInfoFromS3Data(xml) {
     item = $(item);
     return {
       Key: item.find('Key').text(),
-      LastModified: item.find('LastModified').text(),
+      LastModified: dateToHumanReadable(item.find('LastModified').text()),
       Size: bytesToHumanReadable(item.find('Size').text()),
       Type: 'file'
     }
   });
+	files.sort(nameSort);
   var directories = $.map(xml.find('CommonPrefixes'), function(item) {
     item = $(item);
     return {
@@ -106,6 +107,7 @@ function getInfoFromS3Data(xml) {
       Type: 'directory'
     }
   });
+	directories.sort(nameSort);
   if ($(xml.find('IsTruncated')[0]).text() == 'true') {
     var nextMarker = $(xml.find('NextMarker')[0]).text();
   } else {
@@ -126,7 +128,7 @@ function getInfoFromS3Data(xml) {
 //    prefix: ...
 // } 
 function prepareTable(info) {
-  var files = info.files.concat(info.directories)
+  var files = info.directories.concat(info.files)
     , prefix = info.prefix
     ;
   var cols = [ 45, 30, 15 ];
@@ -189,10 +191,25 @@ function padRight(padString, length) {
 
 function bytesToHumanReadable(sizeInBytes) {
   var i = -1;
-  var units = [' kB', ' MB', ' GB'];
+  var units = [' KB', ' MB', ' GB'];
   do {
     sizeInBytes = sizeInBytes / 1024;
     i++;
   } while (sizeInBytes > 1024);
   return Math.max(sizeInBytes, 0.1).toFixed(1) + units[i];
+}
+
+function dateToHumanReadable(fileDate) {
+	var newDate = new Date(fileDate).toLocaleString();
+	if (newDate == 'Invalid Date') {
+		newDate = '';
+	}
+	return newDate;
+}
+
+function nameSort(a, b) {
+	var valA = a.Key.toUpperCase(),
+		valB = b.Key.toUpperCase();
+
+	return valA < valB ? -1 : valA == valB ? 0 : 1;
 }
